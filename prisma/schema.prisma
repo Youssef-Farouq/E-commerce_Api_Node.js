@@ -9,24 +9,30 @@ datasource db {
 
 model User {
   id            Int           @id @default(autoincrement())
-  username      String        @unique
   email         String        @unique
   passwordHash  String
-  role          String        @default("User")
+  firstName     String
+  lastName      String
+  age           Int
+  gender        String
+  profilePicUrl String?
   createdAt     DateTime      @default(now())
   lastLoginAt   DateTime?
-  tasks         Task[]
   refreshTokens RefreshToken[]
 }
 
-model Task {
+model Item {
   id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  status      String   // Using String instead of enum for SQLite compatibility
+  name        String
+  category    String
+  description String
+  cost        Float
+  thumbnailUrl String
+  imageUrl    String
+  size        String?
+  color       String?
   createdAt   DateTime @default(now())
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
+  updatedAt   DateTime @updatedAt
 }
 
 model RefreshToken {

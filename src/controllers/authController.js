@@ -101,7 +101,7 @@ const generateTokens = async (user) => {
 const authController = {
   /**
    * @swagger
-   * /api/auth/register:
+   * /auth/register:
    *   post:
    *     summary: Register a new user
    *     tags: [Auth]
@@ -110,64 +110,118 @@ const authController = {
    *       content:
    *         application/json:
    *           schema:
-   *             $ref: '#/components/schemas/UserDto'
+   *             $ref: '#/components/schemas/User'
    *     responses:
-   *       200:
+   *       201:
    *         description: User registered successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               allOf:
+   *                 - $ref: '#/components/schemas/ApiResponse'
+   *                 - example:
+   *                     success: true
+   *                     message: User registered successfully
+   *                     data:
+   *                       token: "jwt-token"
+   *                       user:
+   *                         id: 1
+   *                         email: "user@example.com"
+   *                         firstName: "John"
+   *                         lastName: "Doe"
+   *                         age: 25
+   *                         gender: "male"
+   *                         profilePicUrl: "https://example.com/profile.jpg"
    *       400:
-   *         description: Username or email already exists
+   *         description: Invalid input or user already exists
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ApiResponse'
    *       500:
    *         description: Server error
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ApiResponse'
    */
   async register(req, res) {
     try {
-      // Validate input
-      const { error } = schemas.register.validate(req.body);
-      if (error) {
-        return res.status(400).json({ error: error.details[0].message });
+      const { email, password, firstName, lastName, age, gender, profilePicUrl } = req.body;
+
+      // Validate required fields
+      if (!email || !password || !firstName || !lastName || !age || !gender) {
+        return res.status(400).json({
+          success: false,
+          message: 'All fields are required except profilePicUrl'
+        });
       }
 
-      const { username, email, password } = req.body;
-
-      // Check if user exists
-      const existingUser = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { username },
-            { email },
-          ],
-        },
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
       });
 
       if (existingUser) {
-        return res.status(400).json({ error: 'Username or email already exists' });
+        return res.status(400).json({
+          success: false,
+          message: 'User already exists'
+        });
       }
 
       // Hash password
-      const passwordHash = await bcrypt.hash(password, 10);
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(password, salt);
 
       // Create user
       const user = await prisma.user.create({
         data: {
-          username,
           email,
           passwordHash,
-          role: 'User',
-          createdAt: new Date(),
-        },
+          firstName,
+          lastName,
+          age,
+          gender,
+          profilePicUrl
+        }
       });
 
-      console.log(`New user registered: ${user.username}`);
-      res.status(200).json({ message: 'User registered successfully' });
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: user.id },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'User registered successfully',
+        data: {
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            age: user.age,
+            gender: user.gender,
+            profilePicUrl: user.profilePicUrl
+          }
+        }
+      });
     } catch (error) {
       console.error('Registration error:', error);
-      res.status(500).json({ error: 'An error occurred while processing your request.' });
+      res.status(500).json({
+        success: false,
+        message: 'Error registering user',
+        error: error.message
+      });
     }
   },
 
   /**
    * @swagger
-   * /api/auth/login:
+   * /auth/login:
    *   post:
    *     summary: Login and get JWT token
    *     tags: [Auth]
@@ -176,52 +230,122 @@ const authController = {
    *       content:
    *         application/json:
    *           schema:
-   *             $ref: '#/components/schemas/LoginDto'
+   *             type: object
+   *             required:
+   *               - email
+   *               - password
+   *             properties:
+   *               email:
+   *                 type: string
+   *                 format: email
+   *                 example: user@example.com
+   *               password:
+   *                 type: string
+   *                 format: password
+   *                 example: password123
    *     responses:
    *       200:
    *         description: Login successful
    *         content:
    *           application/json:
    *             schema:
-   *               $ref: '#/components/schemas/AuthResponse'
+   *               allOf:
+   *                 - $ref: '#/components/schemas/ApiResponse'
+   *                 - example:
+   *                     success: true
+   *                     message: Login successful
+   *                     data:
+   *                       token: "jwt-token"
+   *                       user:
+   *                         id: 1
+   *                         email: "user@example.com"
+   *                         firstName: "John"
+   *                         lastName: "Doe"
+   *                         age: 25
+   *                         gender: "male"
+   *                         profilePicUrl: "https://example.com/profile.jpg"
    *       401:
    *         description: Invalid credentials
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ApiResponse'
    *       500:
    *         description: Server error
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ApiResponse'
    */
   async login(req, res) {
     try {
-      // Validate input
-      const { error } = schemas.login.validate(req.body);
-      if (error) {
-        return res.status(400).json({ error: error.details[0].message });
-      }
+      const { email, password } = req.body;
 
-      const { username, password } = req.body;
+      // Validate required fields
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email and password are required'
+        });
+      }
 
       // Find user
       const user = await prisma.user.findUnique({
-        where: { username },
+        where: { email }
       });
 
-      if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-        return res.status(401).json({ error: 'Invalid username or password' });
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+      }
+
+      // Verify password
+      const validPassword = await bcrypt.compare(password, user.passwordHash);
+      if (!validPassword) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
       }
 
       // Update last login
       await prisma.user.update({
         where: { id: user.id },
-        data: { lastLoginAt: new Date() },
+        data: { lastLoginAt: new Date() }
       });
 
-      // Generate tokens
-      const tokens = await generateTokens(user);
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: user.id },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
 
-      console.log(`User logged in: ${user.username}`);
-      res.json(tokens);
+      res.json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            age: user.age,
+            gender: user.gender,
+            profilePicUrl: user.profilePicUrl
+          }
+        }
+      });
     } catch (error) {
       console.error('Login error:', error);
-      res.status(500).json({ error: 'An error occurred while processing your request.' });
+      res.status(500).json({
+        success: false,
+        message: 'Error logging in',
+        error: error.message
+      });
     }
   },
 

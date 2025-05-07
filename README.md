@@ -6,10 +6,14 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
 
 - User authentication with JWT
 - Task management (CRUD operations)
+- Item management (CRUD operations)
 - Rate limiting
 - Swagger API documentation
 - Refresh token mechanism
 - SQLite database with Prisma ORM
+- Centralized routing system
+- Enhanced error handling
+- Input validation middleware
 
 ## Prerequisites
 
@@ -79,6 +83,13 @@ Swagger documentation is available at: http://localhost:3000/api-docs
 - PUT `/api/tasks/:id` - Update task (protected)
 - DELETE `/api/tasks/:id` - Delete task (protected)
 
+### Items
+- POST `/api/items` - Create a new item (protected)
+- GET `/api/items` - Get all items (protected)
+- GET `/api/items/:id` - Get item by ID (protected)
+- PUT `/api/items/:id` - Update item (protected)
+- DELETE `/api/items/:id` - Delete item (protected)
+
 ## Testing the API
 
 1. Register a new user:
@@ -134,4 +145,17 @@ The API uses a global exception handler that returns errors in the following for
 - Input validation
 - SQL injection protection (via Prisma)
 - XSS protection (via Helmet)
-- HTTPS redirection in production 
+- HTTPS redirection in production
+
+## Project Structure
+
+```
+src/
+├── config/         # Configuration files
+├── controllers/    # Route controllers
+├── middleware/     # Custom middleware
+├── routes/         # Route definitions
+├── prisma/         # Database schema and migrations
+├── app.js         # Express app setup
+└── server.js      # Server entry point
+``` 
