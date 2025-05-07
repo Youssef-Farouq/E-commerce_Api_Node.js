@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  username      String        @unique
+  email         String        @unique
+  passwordHash  String
+  role          String        @default("User")
+  createdAt     DateTime      @default(now())
+  lastLoginAt   DateTime?
+  tasks         Task[]
+  refreshTokens RefreshToken[]
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  status      String   // Using String instead of enum for SQLite compatibility
+  createdAt   DateTime @default(now())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model RefreshToken {
+  id            Int      @id @default(autoincrement())
+  token         String   @unique
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  replacedByToken String?
+  reasonRevoked String?
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+} 
