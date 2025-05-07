@@ -1,161 +1,218 @@
-# Node.js Task Manager API
+# Task Management API
 
 A robust RESTful API for task management built with Node.js, Express, and Prisma.
 
 ## Features
 
-- User authentication with JWT
-- Task management (CRUD operations)
-- Item management (CRUD operations)
-- Rate limiting
-- Swagger API documentation
-- Refresh token mechanism
-- SQLite database with Prisma ORM
-- Centralized routing system
-- Enhanced error handling
-- Input validation middleware
+- 🔐 **Authentication & Authorization**
+  - JWT-based authentication
+  - Refresh token mechanism
+  - Password reset functionality
+  - Role-based access control
+  - Secure password requirements
+
+- 📝 **Task Management**
+  - Create, read, update, and delete tasks
+  - Task status tracking
+  - Task filtering and search
+  - User-specific task lists
+
+- 🛡️ **Security**
+  - Password hashing with bcrypt
+  - JWT token encryption
+  - Rate limiting
+  - CORS protection
+  - Helmet security headers
+  - Input validation
+  - SQL injection prevention
+
+- 📚 **API Documentation**
+  - Swagger/OpenAPI documentation
+  - Interactive API testing interface
+  - Detailed request/response schemas
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
-- npm (v6 or higher)
+- npm or yarn
+- SQLite (for development) or PostgreSQL (for production)
 
-## Setup
+## Installation
 
-1. Clone the repository
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd Task_Management_API_Node.js
+   ```
+
 2. Install dependencies:
    ```bash
    npm install
    ```
 
-3. Initialize the database:
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Update the `.env` file with your configuration.
+
+4. Initialize the database:
    ```bash
    npx prisma generate
-   npx prisma db push
+   npx prisma migrate dev
    ```
 
-4. Create a `.env` file in the root directory with the following variables:
+5. Start the server:
+   ```bash
+   npm start
    ```
-   # Database
-   DATABASE_URL="file:./dev.db"
-
-   # JWT
-   JWT_SECRET="your-super-secret-key-change-this-in-production"
-   JWT_ISSUER="task-manager-api"
-   JWT_AUDIENCE="task-manager-client"
-   JWT_EXPIRY_IN_MINUTES=15
-
-   # Server
-   PORT=3000
-   NODE_ENV=development
-   ```
-
-## Running the Application
-
-Development mode:
-```bash
-npm run dev
-```
-
-Production mode:
-```bash
-npm start
-```
-
-The server will start on http://localhost:3000
-
-## API Documentation
-
-Swagger documentation is available at: http://localhost:3000/api-docs
 
 ## API Endpoints
 
 ### Authentication
-- POST `/api/auth/register` - Register a new user
-- POST `/api/auth/login` - Login user
-- POST `/api/auth/refresh-token` - Refresh authentication token
-- POST `/api/auth/revoke-token` - Revoke authentication token (protected)
 
-### Tasks
-- POST `/api/tasks` - Create a new task (protected)
-- GET `/api/tasks` - Get all tasks (protected)
-- GET `/api/tasks/:id` - Get task by ID (protected)
-- PUT `/api/tasks/:id` - Update task (protected)
-- DELETE `/api/tasks/:id` - Delete task (protected)
+#### Public Endpoints
+- `POST /api/auth/register` - Register a new user
+  ```json
+  {
+    "email": "youssef@outlook.com",
+    "password": "Youssef123!",
+    "firstName": "Youssef",
+    "lastName": "Farouq",
+    "age": 24,
+    "gender": "male"
+  }
+  ```
 
-### Items
-- POST `/api/items` - Create a new item (protected)
-- GET `/api/items` - Get all items (protected)
-- GET `/api/items/:id` - Get item by ID (protected)
-- PUT `/api/items/:id` - Update item (protected)
-- DELETE `/api/items/:id` - Delete item (protected)
-
-## Testing the API
-
-1. Register a new user:
-```bash
-curl -X POST http://localhost:3000/api/auth/register \
--H "Content-Type: application/json" \
--d '{
-    "username": "Youssef",
-    "email": "youssef@hotmail.com",
+- `POST /api/auth/login` - Login and get JWT token
+  ```json
+  {
+    "email": "youssef@outlook.com",
     "password": "Youssef123!"
-}'
-```
+  }
+  ```
 
-2. Login to get JWT token:
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
--H "Content-Type: application/json" \
--d '{
-    "username": "Youssef",
-    "password": "Youssef123!"
-}'
-```
+- `POST /api/auth/refresh-token` - Refresh JWT token
+  ```json
+  {
+    "refreshToken": "your-refresh-token"
+  }
+  ```
 
-3. Use the JWT token for protected endpoints:
-```bash
-curl -X POST http://localhost:3000/api/tasks \
--H "Content-Type: application/json" \
--H "Authorization: Bearer YOUR_JWT_TOKEN" \
--d '{
-    "title": "My first task",
-    "description": "This is a test task",
-    "status": "Pending"
-}'
-```
+- `POST /api/auth/forgot-password` - Request password reset
+  ```json
+  {
+    "email": "user@example.com"
+  }
+  ```
 
-## Error Handling
+- `POST /api/auth/reset-password` - Reset password with token
+  ```json
+  {
+    "token": "reset-token",
+    "newPassword": "NewSecurePass123!"
+  }
+  ```
 
-The API uses a global exception handler that returns errors in the following format:
-```json
-{
-    "error": "Error message"
-}
-```
+#### Protected Endpoints
+- `GET /api/auth/profile` - Get current user's profile
+- `POST /api/auth/change-password` - Change user's password
+  ```json
+  {
+    "currentPassword": "CurrentPass123!",
+    "newPassword": "NewSecurePass123!"
+  }
+  ```
+
+### Task Management
+
+#### Protected Endpoints
+- `GET /api/tasks` - Get all tasks
+  - Query Parameters:
+    - `status`: Filter by status (pending/in_progress/completed)
+    - `search`: Search in title and description
+
+- `GET /api/tasks/:id` - Get specific task
+
+- `POST /api/tasks` - Create new task
+  ```json
+  {
+    "title": "Complete project",
+    "description": "Finish the task management API",
+    "status": "pending"
+  }
+  ```
 
 ## Security Features
 
-- JWT-based authentication
-- Password hashing with bcrypt
-- Rate limiting
-- CORS protection
-- Refresh token rotation
-- Token revocation
-- Input validation
-- SQL injection protection (via Prisma)
-- XSS protection (via Helmet)
-- HTTPS redirection in production
+### Password Requirements
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+- At least one special character
 
-## Project Structure
+### Rate Limiting
+- API endpoints: 100 requests per 15 minutes
+- Auth endpoints: 5 requests per 15 minutes
 
+### CORS Configuration
+- Configurable allowed origins
+- Secure headers with Helmet
+- Request size limits
+
+## Error Handling
+
+The API uses a consistent error response format:
+```json
+{
+  "success": false,
+  "message": "Error message",
+  "errors": [
+    {
+      "field": "fieldName",
+      "message": "Validation error message"
+    }
+  ]
+}
+```
+
+## API Documentation
+
+Access the interactive API documentation at:
+```
+http://localhost:3000/api-docs
+```
+
+## Development
+
+### Project Structure
 ```
 src/
 ├── config/         # Configuration files
 ├── controllers/    # Route controllers
 ├── middleware/     # Custom middleware
-├── routes/         # Route definitions
-├── prisma/         # Database schema and migrations
+├── models/         # Database models
+├── routes/         # API routes
+├── utils/          # Utility functions
 ├── app.js         # Express app setup
 └── server.js      # Server entry point
-``` 
+```
+
+### Database Schema
+The project uses Prisma with the following main models:
+- User
+- Task
+- RefreshToken
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License. 
