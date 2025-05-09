@@ -1,6 +1,6 @@
-# Task Management API
+# E-commerce API
 
-A robust RESTful API for task management built with Node.js, Express, and Prisma.
+A robust RESTful API for e-commerce built with Node.js, Express, and Prisma.
 
 ## Features
 
@@ -11,12 +11,12 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
   - Secure password requirements
   - User profile management with profile pictures
 
-- 📋 **Task Management**
-  - Create, read, update, and delete tasks
-  - Assign tasks to users
-  - Filter tasks by status, priority, and due date
-  - Task comments and attachments
-  - Task history and audit logs
+- 🛍️ **Item Management**
+  - List items with pagination
+  - Get detailed item information
+  - AI-powered item search and comparison
+  - Category-based filtering
+  - Item attributes (size, color, etc.)
 
 - 🛡️ **Security**
   - Password hashing with bcrypt
@@ -43,7 +43,7 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd task-management-api
+   cd e-commerce-api
    ```
 
 2. Install dependencies:
@@ -161,24 +161,23 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
   }
   ```
 
-### Task Management
+### Item Management
 
 #### Public Endpoints
-- `GET /api/tasks` - Get list of tasks
+- `GET /api/items` - Get list of items
   - Query Parameters:
     - `page`: Page number (default: 1)
-    - `limit`: Tasks per page (default: 10)
+    - `limit`: Items per page (default: 10)
   - Response:
     ```json
     {
-      "tasks": [
+      "items": [
         {
           "id": 1,
-          "title": "Complete project",
-          "status": "In Progress",
-          "priority": "High",
-          "dueDate": "2024-03-20T00:00:00Z",
-          "assignedTo": "Youssef Farouq"
+          "name": "Classic White T-Shirt",
+          "category": "Clothing",
+          "cost": 19.99,
+          "thumbnailUrl": "https://example.com/thumbnail.jpg"
         }
       ],
       "pagination": {
@@ -190,54 +189,63 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
     }
     ```
 
-- `GET /api/tasks/:id` - Get detailed task information
+- `GET /api/items/:id` - Get detailed item information
   - Response:
     ```json
     {
       "id": 1,
-      "title": "Complete project",
-      "description": "Finish the task management API",
-      "status": "In Progress",
-      "priority": "High",
-      "dueDate": "2024-03-20T00:00:00Z",
-      "assignedTo": "Youssef Farouq",
-      "comments": [
-        {
-          "id": 1,
-          "text": "Working on it",
-          "author": "Youssef Farouq",
-          "createdAt": "2024-03-15T16:00:00Z"
-        }
-      ]
+      "name": "Classic White T-Shirt",
+      "category": "Clothing",
+      "description": "A comfortable cotton t-shirt",
+      "cost": 19.99,
+      "thumbnailUrl": "https://example.com/thumbnail.jpg",
+      "imageUrl": "https://example.com/image.jpg",
+      "size": "M",
+      "color": "White",
+      "stock": 100,
+      "isAvailable": true,
+      "attributes": {
+        "material": "Cotton",
+        "brand": "FashionCo",
+        "care": "Machine wash cold"
+      }
     }
     ```
 
 #### Protected Endpoints
-- `POST /api/tasks` - Create a new task
+- `POST /api/items/search` - AI-powered item search
   - Request:
     ```json
     {
-      "title": "New Task",
-      "description": "Task description",
-      "status": "To Do",
-      "priority": "Medium",
-      "dueDate": "2024-03-25T00:00:00Z",
-      "assignedTo": "user@example.com"
+      "query": "Find white cotton t-shirts under $30",
+      "filters": {
+        "minPrice": 0,
+        "maxPrice": 30,
+        "color": "White",
+        "category": "Clothing"
+      }
     }
     ```
-- `PUT /api/tasks/:id` - Update a task
-  - Request:
+  - Response:
     ```json
     {
-      "title": "Updated Task",
-      "description": "Updated description",
-      "status": "In Progress",
-      "priority": "High",
-      "dueDate": "2024-03-30T00:00:00Z",
-      "assignedTo": "user@example.com"
+      "results": [
+        {
+          "id": 1,
+          "name": "Classic White T-Shirt",
+          "category": "Clothing",
+          "description": "A comfortable cotton t-shirt",
+          "cost": 19.99,
+          "thumbnailUrl": "https://example.com/thumbnail.jpg",
+          "imageUrl": "https://example.com/image.jpg",
+          "size": "M",
+          "color": "White",
+          "relevanceScore": 0.95
+        }
+      ],
+      "totalItems": 1
     }
     ```
-- `DELETE /api/tasks/:id` - Delete a task
 
 ## Security Features
 
@@ -290,6 +298,8 @@ src/
 ├── middleware/     # Custom middleware
 ├── prisma/         # Database schema and migrations
 ├── routes/         # API routes
+├── services/       # Business logic
+├── utils/          # Utility functions
 ├── app.js         # Express app setup
 └── server.js      # Server entry point
 ```
@@ -297,7 +307,7 @@ src/
 ### Database Schema
 The project uses Prisma with the following main models:
 - User
-- Task
+- Item
 - RefreshToken
 
 ## Contributing
@@ -310,55 +320,4 @@ The project uses Prisma with the following main models:
 
 ## License
 
-This project is licensed under the MIT License.
-
-## About
-
-No description, website, or topics provided.
-
-### Resources
-
-Readme 
-
-Activity 
-
-### Stars
-
-**0** stars 
-
-### Watchers
-
-**1** watching 
-
-### Forks
-
-**0** forks 
-
-Report repository 
-
-## Releases
-
-No releases published
-
-## Packages0
-
-No packages published   
-
-## Languages
-
-* JavaScript 100.0%
-
-## Footer
-
-© 2025 GitHub, Inc. 
-
-### Footer navigation
-
-* Terms
-* Privacy
-* Security
-* Status
-* Docs
-* Contact
-* Manage cookies
-* Do not share my personal information 
+This project is licensed under the MIT License. 
