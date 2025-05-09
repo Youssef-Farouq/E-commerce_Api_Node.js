@@ -26,3 +26,7 @@ build/
 # Logs
 logs/
 *.log 
+
+# Database
+*.db
+prisma/dev.db 
