@@ -30,33 +30,29 @@ const options = {
             email: {
               type: 'string',
               format: 'email',
-              example: 'user@example.com',
+              example: 'youssef@outlook.com',
             },
             password: {
               type: 'string',
               format: 'password',
-              example: 'password123',
+              example: 'Youssef123!',
             },
             firstName: {
               type: 'string',
-              example: 'John',
+              example: 'Youssef',
             },
             lastName: {
               type: 'string',
-              example: 'Doe',
+              example: 'Farouq',
             },
             age: {
               type: 'integer',
-              example: 25,
+              example: 24,
             },
             gender: {
               type: 'string',
               example: 'male',
-            },
-            profilePicUrl: {
-              type: 'string',
-              example: 'https://example.com/profile.jpg',
-            },
+            }
           },
         },
         Item: {

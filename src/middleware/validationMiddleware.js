@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { body, validationResult } = require('express-validator');
 
 const validate = (schema) => (req, res, next) => {
     const { error } = schema.validate(req.body);
@@ -29,8 +30,7 @@ const schemas = {
         firstName: Joi.string().required(),
         lastName: Joi.string().required(),
         age: Joi.number().integer().min(13).max(120).required(),
-        gender: Joi.string().valid('male', 'female', 'other').required(),
-        profilePicUrl: Joi.string().uri().optional()
+        gender: Joi.string().valid('male', 'female', 'other').required()
     }),
     
     login: Joi.object({
@@ -50,8 +50,7 @@ const schemas = {
         firstName: Joi.string().min(2).max(50),
         lastName: Joi.string().min(2).max(50),
         age: Joi.number().min(13).max(120),
-        gender: Joi.string().valid('male', 'female', 'other'),
-        profilePicUrl: Joi.string().uri().allow('')
+        gender: Joi.string().valid('male', 'female', 'other')
     }).min(1), // At least one field must be provided
 
     changePassword: Joi.object({
@@ -115,8 +114,17 @@ const validateRequest = (schemaName) => {
     };
 };
 
+const validateResults = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+};
+
 module.exports = {
     validate,
     validateRequest,
-    schemas
+    schemas,
+    validateResults
 }; 

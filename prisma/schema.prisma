@@ -10,12 +10,11 @@ datasource db {
 model User {
   id            Int           @id @default(autoincrement())
   email         String        @unique
-  passwordHash  String
+  password      String
   firstName     String
   lastName      String
   age           Int
   gender        String
-  profilePicUrl String?
   createdAt     DateTime      @default(now())
   lastLoginAt   DateTime?
   refreshTokens RefreshToken[]

@@ -1,16 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/authController');
-const itemController = require('../controllers/itemController');
-const { authenticateToken } = require('../middleware/auth');
+const authRoutes = require('./authRoutes');
+const itemRoutes = require('./itemRoutes');
 
 // Auth routes
-router.post('/auth/register', authController.register);
-router.post('/auth/login', authController.login);
+router.use('/auth', authRoutes);
 
-// Item routes (protected)
-router.get('/items/list', authenticateToken, itemController.listItems);
-router.get('/items/details/:id', authenticateToken, itemController.getItemDetails);
-router.post('/items/search', authenticateToken, itemController.aiSearch);
+// Item routes
+router.use('/api', itemRoutes);
 
 module.exports = router; 

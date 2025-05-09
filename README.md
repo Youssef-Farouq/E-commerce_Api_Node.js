@@ -1,6 +1,6 @@
-# Task Management API
+# E-commerce API
 
-A robust RESTful API for task management built with Node.js, Express, and Prisma.
+A robust RESTful API for e-commerce built with Node.js, Express, and Prisma.
 
 ## Features
 
@@ -8,14 +8,15 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
   - JWT-based authentication
   - Refresh token mechanism
   - Password reset functionality
-  - Role-based access control
   - Secure password requirements
+  - User profile management with profile pictures
 
-- 📝 **Task Management**
-  - Create, read, update, and delete tasks
-  - Task status tracking
-  - Task filtering and search
-  - User-specific task lists
+- 🛍️ **Item Management**
+  - List items with pagination
+  - Get detailed item information
+  - AI-powered item search and comparison
+  - Category-based filtering
+  - Item attributes (size, color, etc.)
 
 - 🛡️ **Security**
   - Password hashing with bcrypt
@@ -42,7 +43,7 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd Task_Management_API_Node.js
+   cd e-commerce-api
    ```
 
 2. Install dependencies:
@@ -54,7 +55,26 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
    ```bash
    cp .env.example .env
    ```
-   Update the `.env` file with your configuration.
+   Update the `.env` file with your configuration:
+   ```
+   # Database
+   DATABASE_URL="file:./dev.db"
+
+   # JWT
+   JWT_SECRET="your-super-secret-jwt-key-change-in-production"
+   JWT_REFRESH_SECRET="your-super-secret-refresh-key-change-in-production"
+   JWT_EXPIRES_IN="1h"
+   JWT_REFRESH_EXPIRES_IN="7d"
+
+   # Server
+   PORT=3000
+   NODE_ENV="development"
+
+   # Rate Limiting
+   RATE_LIMIT_WINDOW_MS=900000  # 15 minutes
+   RATE_LIMIT_MAX=100  # 100 requests per window
+   AUTH_RATE_LIMIT_MAX=5  # 5 requests per window for auth endpoints
+   ```
 
 4. Initialize the database:
    ```bash
@@ -116,6 +136,23 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
 
 #### Protected Endpoints
 - `GET /api/auth/profile` - Get current user's profile
+  - Response:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "id": 1,
+        "email": "youssef@outlook.com",
+        "firstName": "Youssef",
+        "lastName": "Farouq",
+        "age": 24,
+        "gender": "male",
+        "createdAt": "2024-03-15T10:00:00Z",
+        "lastLoginAt": "2024-03-15T15:30:00Z"
+      }
+    }
+    ```
+
 - `POST /api/auth/change-password` - Change user's password
   ```json
   {
@@ -124,24 +161,80 @@ A robust RESTful API for task management built with Node.js, Express, and Prisma
   }
   ```
 
-### Task Management
+### Item Management
+
+#### Public Endpoints
+- `GET /api/items` - Get list of items
+  - Query Parameters:
+    - `page`: Page number (default: 1)
+    - `limit`: Items per page (default: 10)
+  - Response:
+    ```json
+    {
+      "items": [
+        {
+          "id": 1,
+          "name": "Classic T-Shirt",
+          "category": "Clothing",
+          "cost": 29.99,
+          "thumbnailUrl": "https://example.com/thumbnail.jpg"
+        }
+      ],
+      "pagination": {
+        "total": 100,
+        "page": 1,
+        "limit": 10,
+        "totalPages": 10
+      }
+    }
+    ```
+
+- `GET /api/items/:id` - Get detailed item information
+  - Response:
+    ```json
+    {
+      "id": 1,
+      "name": "Classic T-Shirt",
+      "category": "Clothing",
+      "description": "A comfortable cotton t-shirt",
+      "cost": 29.99,
+      "thumbnailUrl": "https://example.com/thumbnail.jpg",
+      "imageUrl": "https://example.com/image.jpg",
+      "size": "M",
+      "color": "Blue"
+    }
+    ```
 
 #### Protected Endpoints
-- `GET /api/tasks` - Get all tasks
-  - Query Parameters:
-    - `status`: Filter by status (pending/in_progress/completed)
-    - `search`: Search in title and description
-
-- `GET /api/tasks/:id` - Get specific task
-
-- `POST /api/tasks` - Create new task
-  ```json
-  {
-    "title": "Complete project",
-    "description": "Finish the task management API",
-    "status": "pending"
-  }
-  ```
+- `POST /api/items/search` - AI-powered item search
+  - Request:
+    ```json
+    {
+      "items": [1, 2, 3],
+      "prompt": "Find the cheaper one in blue color"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "results": [
+        {
+          "id": 1,
+          "name": "Classic T-Shirt",
+          "category": "Clothing",
+          "description": "A comfortable cotton t-shirt",
+          "cost": 29.99,
+          "thumbnailUrl": "https://example.com/thumbnail.jpg",
+          "imageUrl": "https://example.com/image.jpg",
+          "size": "M",
+          "color": "Blue",
+          "relevanceScore": 10
+        }
+      ],
+      "prompt": "Find the cheaper one in blue color",
+      "totalItems": 1
+    }
+    ```
 
 ## Security Features
 
@@ -192,9 +285,8 @@ src/
 ├── config/         # Configuration files
 ├── controllers/    # Route controllers
 ├── middleware/     # Custom middleware
-├── models/         # Database models
+├── prisma/         # Database schema and migrations
 ├── routes/         # API routes
-├── utils/          # Utility functions
 ├── app.js         # Express app setup
 └── server.js      # Server entry point
 ```
@@ -202,7 +294,7 @@ src/
 ### Database Schema
 The project uses Prisma with the following main models:
 - User
-- Task
+- Item
 - RefreshToken
 
 ## Contributing

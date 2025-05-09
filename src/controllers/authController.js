@@ -241,7 +241,6 @@ const authController = {
    *                   lastName: Farouq
    *                   age: 24
    *                   gender: male
-   *                   profilePicUrl: https://example.com/profile.jpg
    *       400:
    *         description: Invalid input or user already exists
    *         content:
@@ -266,7 +265,7 @@ const authController = {
         });
       }
 
-      const { email, password, firstName, lastName, age, gender, profilePicUrl } = req.body;
+      const { email, password, firstName, lastName, age, gender } = req.body;
 
       // Validate password strength
       const passwordValidation = validatePassword(password);
@@ -298,12 +297,11 @@ const authController = {
       const user = await prisma.user.create({
         data: {
           email,
-          passwordHash,
+          password: passwordHash,
           firstName,
           lastName,
           age,
-          gender,
-          profilePicUrl
+          gender
         }
       });
 
@@ -321,8 +319,7 @@ const authController = {
             firstName: user.firstName,
             lastName: user.lastName,
             age: user.age,
-            gender: user.gender,
-            profilePicUrl: user.profilePicUrl
+            gender: user.gender
           }
         }
       });
@@ -372,7 +369,6 @@ const authController = {
    *                   lastName: Farouq
    *                   age: 24
    *                   gender: male
-   *                   profilePicUrl: https://example.com/profile.jpg
    *       401:
    *         description: Invalid credentials
    *         content:
@@ -412,7 +408,7 @@ const authController = {
       }
 
       // Verify password
-      const validPassword = await bcrypt.compare(password, user.passwordHash);
+      const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) {
         return res.status(401).json({
           success: false,
@@ -440,8 +436,7 @@ const authController = {
             firstName: user.firstName,
             lastName: user.lastName,
             age: user.age,
-            gender: user.gender,
-            profilePicUrl: user.profilePicUrl
+            gender: user.gender
           }
         }
       });
@@ -680,7 +675,6 @@ const authController = {
           lastName: true,
           age: true,
           gender: true,
-          profilePicUrl: true,
           createdAt: true,
           lastLoginAt: true
         }
@@ -864,7 +858,7 @@ const authController = {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          passwordHash,
+          password: passwordHash,
           resetToken: null,
           resetTokenExpiry: null
         }
@@ -880,6 +874,64 @@ const authController = {
         success: false,
         message: 'Error resetting password',
         error: error.message
+      });
+    }
+  },
+
+  async changePassword(req, res) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const userId = req.user.id;
+
+      // Get user from database
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      // Verify current password
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({
+          success: false,
+          message: 'Current password is incorrect'
+        });
+      }
+
+      // Validate new password
+      const passwordValidation = validatePassword(newPassword);
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid new password',
+          errors: passwordValidation.errors
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password in database
+      await prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedPassword }
+      });
+
+      res.json({
+        success: true,
+        message: 'Password changed successfully'
+      });
+    } catch (error) {
+      console.error('Change password error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to change password'
       });
     }
   }

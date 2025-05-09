@@ -50,34 +50,35 @@ const prisma = new PrismaClient();
  */
 const listItems = async (req, res) => {
   try {
-    const { category } = req.query;
-    
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const items = await prisma.item.findMany({
-      where: category ? { category } : undefined,
+      skip,
+      take: limit,
       select: {
         id: true,
         name: true,
         category: true,
         cost: true,
         thumbnailUrl: true
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
 
+    const total = await prisma.item.count();
+
     res.json({
-      success: true,
-      message: 'Items retrieved successfully',
-      data: items
+      items,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
-    console.error('Error listing items:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Error fetching items',
-      error: error.message 
-    });
+    res.status(500).json({ error: 'Failed to fetch items' });
   }
 };
 
@@ -138,38 +139,17 @@ const listItems = async (req, res) => {
  */
 const getItemDetails = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    if (!id || isNaN(parseInt(id))) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid item ID'
-      });
-    }
-
     const item = await prisma.item.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(req.params.id) }
     });
 
     if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: 'Item not found'
-      });
+      return res.status(404).json({ error: 'Item not found' });
     }
 
-    res.json({
-      success: true,
-      message: 'Item details retrieved successfully',
-      data: item
-    });
+    res.json(item);
   } catch (error) {
-    console.error('Error fetching item details:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching item details',
-      error: error.message
-    });
+    res.status(500).json({ error: 'Failed to fetch item details' });
   }
 };
 
@@ -245,21 +225,12 @@ const aiSearch = async (req, res) => {
   try {
     const { items, prompt } = req.body;
 
+    // Validate items array
     if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Items array is required and must not be empty'
-      });
+      return res.status(400).json({ error: 'Invalid items array' });
     }
 
-    if (!prompt || typeof prompt !== 'string') {
-      return res.status(400).json({
-        success: false,
-        message: 'Search prompt is required'
-      });
-    }
-
-    // Fetch all items from the database
+    // Fetch items from database
     const dbItems = await prisma.item.findMany({
       where: {
         id: {
@@ -268,48 +239,44 @@ const aiSearch = async (req, res) => {
       }
     });
 
-    if (dbItems.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'No items found with the provided IDs'
-      });
-    }
-
-    // Simple comparison logic based on prompt
-    let result;
-    if (prompt.toLowerCase().includes('cheaper')) {
-      result = dbItems.reduce((prev, current) => 
-        prev.cost < current.cost ? prev : current
-      );
-    } else if (prompt.toLowerCase().includes('color')) {
-      const colorMatch = prompt.match(/color\s+(\w+)/i);
-      if (colorMatch) {
-        const targetColor = colorMatch[1].toLowerCase();
-        result = dbItems.find(item => 
-          item.color && item.color.toLowerCase() === targetColor
-        );
+    // Simple comparison logic based on prompt keywords
+    const results = dbItems.map(item => {
+      let score = 0;
+      
+      // Check for price-related criteria
+      if (prompt.toLowerCase().includes('cheaper') || prompt.toLowerCase().includes('lowest price')) {
+        score -= item.cost;
       }
-    }
+      if (prompt.toLowerCase().includes('expensive') || prompt.toLowerCase().includes('highest price')) {
+        score += item.cost;
+      }
 
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        message: 'No matching items found for the given criteria'
-      });
-    }
+      // Check for color availability
+      if (item.color && prompt.toLowerCase().includes(item.color.toLowerCase())) {
+        score += 10;
+      }
+
+      // Check for size availability
+      if (item.size && prompt.toLowerCase().includes(item.size.toLowerCase())) {
+        score += 10;
+      }
+
+      return {
+        ...item,
+        relevanceScore: score
+      };
+    });
+
+    // Sort results by relevance score
+    results.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
     res.json({
-      success: true,
-      message: 'Search completed successfully',
-      data: result
+      results,
+      prompt,
+      totalItems: results.length
     });
   } catch (error) {
-    console.error('Error in AI search:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error processing AI search',
-      error: error.message
-    });
+    res.status(500).json({ error: 'Failed to process AI search' });
   }
 };
 
